@@ -10,10 +10,13 @@
  sending "static" information for simplicity
 */
 #include <mqtt.h>
+
 /* #include <SoftwareSerial.h>
 #include "TinyGPS.h"
 TinyGPS gps;
 */
+
+
 // GPS parser for 406a
 #define BUFFSIZ 90 // plenty big
 char buffer[BUFFSIZ];
@@ -66,12 +69,16 @@ void loop(){
  /* The arguments here are:
  clientID, IP, Port, Topic, Message
  */
-sendMQTTMessage("nodeTest", "test.mosquitto.org", "1883", "MFNodeTopic", "Cao Hoang Tien _ MQTT Client Test");
+sendMQTTMessage("chtien", "test.mosquitto.org", "1883", "chtienTopic", "Cao Hoang Tien _ MQTT Client Test");
+//Test on IBM Bluemix
+//sendMQTTMessage("d:iotsample-arduino:daaddeeffeef", "quickstart.messaging.internetofthings.ibmcloud.com", "1883", "iot-2/evt/status/fmt/json", "9");
  }
 
  delay(10000);
 
 }
+
+
 uint32_t parsedecimal(char *str) {
  uint32_t d = 0;
  while (str[0] != 0) {
@@ -122,7 +129,7 @@ boolean isGPRSReady(){
 }
 void sendMQTTMessage(char* clientId, char* brokerUrl, char* brokerPort, char* topic, char* message){
  Serial1.println("AT"); // Sends AT command to wake up cell phone
- Serial.println("AT");
+ Serial.println("send AT to wake up GPRS");
  delay(1000); // Wait a second
  digitalWrite(13, HIGH);
  Serial1.println("AT+CSTT=\"m-wap\",\"mms\",\"mms\""); // Puts phone into GPRS mode
@@ -174,3 +181,4 @@ void sendMQTTMessage(char* clientId, char* brokerUrl, char* brokerPort, char* to
  Serial.println("AT+CIPCLOSE");
  delay(2000);
 }
+
