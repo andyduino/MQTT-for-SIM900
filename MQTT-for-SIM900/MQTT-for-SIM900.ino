@@ -69,9 +69,9 @@ void loop(){
  /* The arguments here are:
  clientID, IP, Port, Topic, Message
  */
-sendMQTTMessage("chtien", "test.mosquitto.org", "1883", "chtienTopic", "Cao Hoang Tien _ MQTT Client Test");
-//Test on IBM Bluemix
-//sendMQTTMessage("d:iotsample-arduino:daaddeeffeef", "quickstart.messaging.internetofthings.ibmcloud.com", "1883", "iot-2/evt/status/fmt/json", "9");
+sendMQTTMessage("agrinode", "iot.eclipse.org", "1883", "agrinode1", "Cao Hoang Tien _ MQTT Client Test");
+
+
  }
 
  delay(10000);
