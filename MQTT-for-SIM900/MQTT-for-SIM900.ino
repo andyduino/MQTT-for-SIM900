@@ -48,6 +48,7 @@ float Air_Temp = 0.0; //AM2301 temparature in celcus
 float Air_Humidity = 0.0; // AM2301 Humidity 
 int ldr = 1;             //analog pin to which LDR is connected
 int ldr_value = 0;        //variable to store LDR values
+float Water_Temp=0.0;
 
 // GPS parser for 406a
 #define BUFFSIZ 90 // plenty big
@@ -91,26 +92,32 @@ void setup() {
 }
 void loop(){
  delay(20000);// wait for GPRS getting stable
- get_AM2301_Data();
  
- Serial.println("Checking if GPRS is ready");
- gprsReady = isGPRSReady();
- 
- if (gprsReady == true){
- Serial.println("GPRS Ready");
- String json = buildJson();
- char jsonStr[200];
- json.toCharArray(jsonStr,200);
-    
- // Change the IP and Topic.
- /* The arguments here are:
- clientID, IP, Port, Topic, Message
- */
-sendMQTTMessage("agrinode", "iot.eclipse.org", "1883", "agrinode1",jsonStr);
- }
+ //for(int k=0;k++;k<2){
+     get_AM2301_Data();
+     get_water_temp();
+     
+     Serial.println("Checking if GPRS is ready");
+     gprsReady = isGPRSReady();
+     
+     if (gprsReady == true){
+     Serial.println("GPRS Ready");
+     String json = buildJson();
+     char jsonStr[300];
+     json.toCharArray(jsonStr,300);
+     Serial.println(json);
+        
+     // Change the IP and Topic.
+     /* The arguments here are:
+     clientID, IP, Port, Topic, Message
+     */
+    sendMQTTMessage("agrinode", "iot.eclipse.org", "1883", "agrinode01",jsonStr);
+ }//and of for 
 
  delay(10000);
-
+ //}
+ 
+ while(1);
 }
 
 
@@ -221,7 +228,7 @@ void sendMQTTMessage(char* clientId, char* brokerUrl, char* brokerPort, char* to
 
 //get AM2301 data function
 void get_AM2301_Data() { 
-    Serial.println("Read data"); 
+    Serial.println("Read AM2301 data"); 
    Air_Humidity = dht.readHumidity();
    Air_Temp = dht.readTemperature();
    
@@ -233,19 +240,67 @@ void get_AM2301_Data() {
   }
 }
   
+void get_water_temp(){
+    uint8_t i;
+  float average;
+ 
+  // take N samples in a row, with a slight delay
+  for (i=0; i< NUMSAMPLES; i++) {
+   samples[i] = analogRead(THERMISTORPIN);
+   delay(10);
+  }
+ 
+  // average all the samples out
+  average = 0;
+  for (i=0; i< NUMSAMPLES; i++) {
+     average += samples[i];
+  }
+  average /= NUMSAMPLES;
+ 
+  Serial.print("Average analog reading "); 
+  Serial.println(average);
+ 
+  // convert the value to resistance
+  average = 1023 / average - 1;
+  average = SERIESRESISTOR / average;
+  Serial.print("Thermistor resistance "); 
+  Serial.println(average);
+ 
+  float steinhart;
+  steinhart = average / THERMISTORNOMINAL;     // (R/Ro)
+  steinhart = log(steinhart);                  // ln(R/Ro)
+  steinhart /= BCOEFFICIENT;                   // 1/B * ln(R/Ro)
+  steinhart += 1.0 / (TEMPERATURENOMINAL + 273.15); // + (1/To)
+  steinhart = 1.0 / steinhart;                 // Invert
+  steinhart -= 273.15;                         // convert to C
+  Water_Temp=steinhart;
+  Serial.print("Temperature "); 
+  Serial.println(steinhart);
+  Serial.println(Water_Temp);
+  Serial.println(" *C");
+ 
+  delay(1000);
+    
+}
 String buildJson() {
   String data = "{";
   data+="\n";
   data+= "\"d\": {";
   data+="\n";
-  data+="\"myName\": \"Arduino DHT11\",";
+  data+="\"myName\": \"Agrinode_01\",";
   data+="\n";
   data+="\"Air Temperature\": ";
-  data+=(int)Air_Temp;
+  data+=(float)Air_Temp;
   data+= ",";
   data+="\n";
+  
   data+="\"Air Humidity\": ";
-  data+=(int)Air_Humidity;
+  data+=(float)Air_Humidity;
+  data+= ",";
+  data+="\n";
+  
+  data+="\"Water Temperature\": ";
+  data+=(float)Water_Temp;
   data+="\n";
   data+="}";
   data+="\n";
