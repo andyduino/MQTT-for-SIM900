@@ -95,7 +95,6 @@ void setup() {
  Serial1.begin(19200); // GPRS module
 // gpss.begin(9600);
  dht.begin();
-
 }
 void loop(){
  delay(20000);// wait for GPRS getting stable
@@ -105,6 +104,8 @@ void loop(){
      get_water_temp();
      
      Serial.println("Checking if GPRS is ready");
+     Serial1.println("AT");
+     delay(1000);
      gprsReady = isGPRSReady();
      
      if (gprsReady == true){
