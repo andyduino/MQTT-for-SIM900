@@ -8,6 +8,13 @@
  modified for IOC parameters
  disabled GPS for simplicity
  sending "static" information for simplicity
+ ----
+  connect arduino to mqtt broker via gprsbee(sim800h module)
+  sesor:
+    A0: AM2301
+    A2: thermistor
+    
+ 
 */
 
 
@@ -112,10 +119,10 @@ void loop(){
      clientID, IP, Port, Topic, Message
      */
     sendMQTTMessage("agrinode", "iot.eclipse.org", "1883", "agrinode01",jsonStr);
- }//and of for 
+ }//and of if
 
  delay(10000);
- //}
+ //} //end of for
  
  while(1);
 }
@@ -289,17 +296,17 @@ String buildJson() {
   data+="\n";
   data+="\"myName\": \"Agrinode_01\",";
   data+="\n";
-  data+="\"Air Temperature\": ";
+  data+="\"Air_Temperature\": ";
   data+=(float)Air_Temp;
   data+= ",";
   data+="\n";
   
-  data+="\"Air Humidity\": ";
+  data+="\"Air_Humidity\": ";
   data+=(float)Air_Humidity;
   data+= ",";
   data+="\n";
   
-  data+="\"Water Temperature\": ";
+  data+="\"Water_Temperature\": ";
   data+=(float)Water_Temp;
   data+="\n";
   data+="}";
@@ -307,3 +314,4 @@ String buildJson() {
   data+="}";
   return data;
 }
+
