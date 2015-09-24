@@ -1,9 +1,7 @@
 /*
  Very, very primitive. MQTT Test program to send data to a MQTT Server
-
  V00 / 09th March 2013, omer sever, omers@tr.ibm.com
  initial version w/o valid IOC parameters
-
  V01 / 10th March 2013, ates yurdakul, atesh@puaga.com
  modified for IOC parameters
  disabled GPS for simplicity
@@ -20,10 +18,11 @@
 
 #include <mqtt.h>
 #include <Math.h>
-//#include <SoftwareSerial.h>
+#include <SoftwareSerial.h>
 #include <String.h>
 #include "DHT.h"
 
+SoftwareSerial GPRS(10, 11); // RX, TX
 /* #include <SoftwareSerial.h>
 #include "TinyGPS.h"
 TinyGPS gps;
@@ -87,27 +86,27 @@ int sentCount = 0;
 
 void setup() {
  pinMode(13, OUTPUT);
- pinMode(14, OUTPUT); // GSM
+ pinMode(22, OUTPUT); // GSM
  digitalWrite(0, HIGH);
 
 
  Serial.begin(9600); //debug
- Serial1.begin(19200); // GPRS module
+ GPRS.begin(9600); // GPRS module
 // gpss.begin(9600);
  dht.begin();
 }
 void loop(){
- delay(20000);// wait for GPRS getting stable
- 
- //for(int k=0;k++;k<2){
-     get_AM2301_Data();
+  
+  // digitalWrite(22,HIGH);
+   digitalWrite(13,HIGH);
+  delay(20000);// wait for GPRS getting stable
+  
+     //get_AM2301_Data();
      get_water_temp();
-     
      Serial.println("Checking if GPRS is ready");
-     Serial1.println("AT");
+     GPRS.println("AT");
      delay(1000);
      gprsReady = isGPRSReady();
-     
      if (gprsReady == true){
      Serial.println("GPRS Ready");
      String json = buildJson();
@@ -119,16 +118,16 @@ void loop(){
      /* The arguments here are:
      clientID, IP, Port, Topic, Message
      */
-    sendMQTTMessage("agrinode", "iot.eclipse.org", "1883", "agrinode01",jsonStr);
+    sendMQTTMessage("agrinode", "test.mosquitto.org", "1883", "agrinode01",jsonStr);
+   
  }//and of if
+//digitalWrite(22,LOW);
+digitalWrite(13,LOW);
+delay(60000);
 
- delay(10000);
- //} //end of for
- 
- while(1);
 }
 
-
+/*
 uint32_t parsedecimal(char *str) {
  uint32_t d = 0;
  while (str[0] != 0) {
@@ -139,7 +138,7 @@ uint32_t parsedecimal(char *str) {
  str++;
  }
  return d;
-}
+}*/
 
 void readline() {
  /*char c;
@@ -159,10 +158,12 @@ void readline() {
  }*/
 }
 boolean isGPRSReady(){
- Serial1.println("AT+CGATT?");
+ GPRS.println("AT");
+ GPRS.println("AT");
+ GPRS.println("AT+CGATT?");
  index = 0;
- while (Serial1.available()){
- data1 = (char)Serial1.read();
+ while (GPRS.available()){
+ data1 = (char)GPRS.read();
  Serial.write(data1);
  gprsStr[index++] = data1;
  }
@@ -180,17 +181,17 @@ boolean isGPRSReady(){
 }
 
 void sendMQTTMessage(char* clientId, char* brokerUrl, char* brokerPort, char* topic, char* message){
- Serial1.println("AT"); // Sends AT command to wake up cell phone
+ GPRS.println("AT"); // Sends AT command to wake up cell phone
  Serial.println("send AT to wake up GPRS");
  delay(1000); // Wait a second
- digitalWrite(13, HIGH);
- Serial1.println("AT+CSTT=\"m-wap\",\"mms\",\"mms\""); // Puts phone into GPRS mode
+// digitalWrite(13, HIGH);
+ GPRS.println("AT+CSTT=\"m-wap\",\"mms\",\"mms\""); // Puts phone into GPRS mode
  Serial.println("AT+CSTT=\"m-wap\",\"mms\",\"mms\"");
  delay(2000); // Wait a second
- Serial1.println("AT+CIICR");
+ GPRS.println("AT+CIICR");
  Serial.println("AT+CIICR");
  delay(2000);
- Serial1.println("AT+CIFSR");
+ GPRS.println("AT+CIFSR");
  Serial.println("AT+CIFSR");
  delay(2000);
  strcpy(atCommand, "AT+CIPSTART=\"TCP\",\"");
@@ -198,38 +199,38 @@ void sendMQTTMessage(char* clientId, char* brokerUrl, char* brokerPort, char* to
  strcat(atCommand, "\",\"");
  strcat(atCommand, brokerPort);
  strcat(atCommand, "\"");
- Serial1.println(atCommand);
+ GPRS.println(atCommand);
  Serial.println(atCommand);
  // Serial.println("AT+CIPSTART=\"TCP\",\"mqttdashboard.com\",\"1883\"");
  delay(2000);
- Serial1.println("AT+CIPSEND");
+ GPRS.println("AT+CIPSEND");
  Serial.println("AT+CIPSEND");
  delay(2000);
  mqttMessageLength = 16 + strlen(clientId);
  Serial.println(mqttMessageLength);
  mqtt_connect_message(mqttMessage, clientId);
  for (int j = 0; j < mqttMessageLength; j++) {
- Serial1.write(mqttMessage[j]); // Message contents
+ GPRS.write(mqttMessage[j]); // Message contents
  Serial.write(mqttMessage[j]); // Message contents
  Serial.println("");
  }
- Serial1.write(byte(26)); // (signals end of message)
+ GPRS.write(byte(26)); // (signals end of message)
  Serial.println("Sent");
  delay(10000);
- Serial1.println("AT+CIPSEND");
+ GPRS.println("AT+CIPSEND");
  Serial.println("AT+CIPSEND");
  delay(2000);
  mqttMessageLength = 4 + strlen(topic) + strlen(message);
  Serial.println(mqttMessageLength);
  mqtt_publish_message(mqttMessage, topic, message);
  for (int k = 0; k < mqttMessageLength; k++) {
- Serial1.write(mqttMessage[k]);
+ GPRS.write(mqttMessage[k]);
  Serial.write((byte)mqttMessage[k]);
  }
- Serial1.write(byte(26)); // (signals end of message)
+ GPRS.write(byte(26)); // (signals end of message)
  Serial.println("-------------Sent-------------"); // Message contents
  delay(5000);
- Serial1.println("AT+CIPCLOSE");
+ GPRS.println("AT+CIPCLOSE");
  Serial.println("AT+CIPCLOSE");
  delay(2000);
 }
@@ -244,7 +245,7 @@ void get_AM2301_Data() {
     Serial.println("Failed to read from DHT sensor");
     Air_Humidity=0;
     Air_Temp=0;
-    return;
+  //  return;
   }
 }
   
@@ -315,4 +316,3 @@ String buildJson() {
   data+="}";
   return data;
 }
-
